@@ -100,11 +100,11 @@ env-print: # Prints the environment we are running in.
 ci-build: # CI thats runs build, test, run cycle using current versions.
 	@echo ""
 	@echo "CI BUILD starting ..."
-	$(MAKE) env-print
-	$(MAKE) mod-tidy
+
+	$(MAKE) dep-mod-tidy
 	$(MAKE) dep-tools
 	$(MAKE) print
-	
+	$(MAKE) env-print
 	$(MAKE) bin-clean
 	$(MAKE) data-clean
 	$(MAKE) gen
@@ -115,16 +115,21 @@ ci-build: # CI thats runs build, test, run cycle using current versions.
 
 
 ci-smoke: # CI that runs build, test, run cycle using the latest versions.
-	$(MAKE) print
+	@echo ""
+	@echo "CI SMOLE starting ..."
+	$(MAKE) dep-mod-tidy
 	$(MAKE) dep-tools
-	$(MAKE) mod-tidy
-	$(MAKE) mod-up-force
+	$(MAKE) dep-mod-up-force
 	$(MAKE) print
 	$(MAKE) env-print
 	$(MAKE) bin-build
 	$(MAKE) run-migrate
+	@echo ""
+	@echo "CI SMOKE ended ...."
 
-dep-tools: # install tools
+### DEPENENCIES
+
+dep-tools: # Install tools needed. 
 	# gens golang models of PB. 
 	# https://github.com/alexisvisco/pocketpase-gen
 	$(OS_GO_BIN_NAME) install github.com/alexisvisco/pocketpase-gen/cmd/pb-gen@latest
@@ -139,15 +144,15 @@ dep-tools: # install tools
 
 ### MODULES
 
-mod-up: # Upgrade golang modules to latest Interactivly.
+dep-mod-up: # Upgrade golang modules to latest Interactivly.
 	$(OS_GO_BIN_NAME) mod tidy
 	$(BIN_GMU_NAME)
 	$(OS_GO_BIN_NAME) mod tidy
-mod-up-force: # Upgrade golang modules to latest Forcefully.
+dep-mod-up-force: # Upgrade golang modules to latest Forcefully.
 	$(OS_GO_BIN_NAME) mod tidy
 	$(BIN_GMU_NAME) -f
 	$(OS_GO_BIN_NAME) mod tidy
-mod-tidy: # Tidy the golang modules to versions in go.mod
+dep-mod-tidy: # Tidy the golang modules to versions in go.mod
 	$(OS_GO_BIN_NAME) mod tidy
 
 ### GEN
