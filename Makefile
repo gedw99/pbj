@@ -7,7 +7,7 @@ endif
 
 OS_GO_OS=$(shell $(OS_GO_BIN_NAME) env GOOS)
 # toggle to fake being windows..
-#OS_GO_OS=windows
+OS_GO_OS=windows
 
 BIN_ROOT=$(PWD)/.bin
 export PATH:=$(PATH):$(BIN_ROOT)
@@ -15,20 +15,20 @@ DATA_ROOT=$(PWD)/.data
 
 BIN_MAIN_NAME=pbj
 ifeq ($(OS_GO_OS),windows)
-	BIN=$(BIN_MAIN_NAME)/pbj.exe
+	BIN_MAIN_NAME=pbj.exe
 endif
 BIN_MAIN=$(BIN_ROOT)/$(BIN_MAIN_NAME)
 BIN_MAIN_WHICH=$(shell command -v $(BIN_MAIN_NAME))
 
 BIN_GEN_NAME=pb-gen
 ifeq ($(OS_GO_OS),windows)
-	BIN=$(BIN_MAIN_NAME)/pb-gen.exe
+	BIN_GEN_NAME=pb-gen.exe
 endif
 BIN_GEN_WHICH=$(shell command -v $(BIN_GEN_NAME))
 
 BIN_GMU_NAME=go-mod-upgrade
 ifeq ($(OS_GO_OS),windows)
-	BIN=$(BIN_GMU_NAME)/go-mod-upgrade.exe
+	BIN_GMU_NAME=go-mod-upgrade.exe
 endif
 BIN_GMU_WHICH=$(shell command -v $(BIN_GMU_NAME))
 
@@ -63,12 +63,11 @@ print:
 	@echo "BIN_GMU_WHICH:    $(BIN_GMU_WHICH)"
 	@echo ""
 
-ci-build: # build for ci, that can be called from Windows, MacOS or Linux
-	# You can call this locally. github workflow also calls it.
-	# Its calling everything in the makefile ...
+ci-build: # build for ci, that can be called from Windows, MacOS or Linux locally and in Github workflows
 	@echo ""
 	@echo "CI BUILD starting ..."
 	$(MAKE) help
+	$(MAKE) print
 	$(MAKE) mod-tidy
 	$(MAKE) dep-tools
 	$(MAKE) print
@@ -78,22 +77,22 @@ ci-build: # build for ci, that can be called from Windows, MacOS or Linux
 	@echo ""
 	@echo "CI BUILD ended ...."
 
-ci-test: ci-build # test for ci, that can be called from Windows, MacOS or Linux
+ci-test: ci-build # test for ci
 	$(MAKE) run-migrate
 
 dep-tools: # install tools
 	# gens golang models of PB. 
 	# https://github.com/alexisvisco/pocketpase-gen
-	go install github.com/alexisvisco/pocketpase-gen/cmd/pb-gen@latest
+	$(OS_GO_BIN_NAME) install github.com/alexisvisco/pocketpase-gen/cmd/pb-gen@latest
 
 	# https://github.com/oligot/go-mod-upgrade
 	# https://github.com/oligot/go-mod-upgrade/releases/tag/v0.9.1
-	go install github.com/oligot/go-mod-upgrade@v0.9.1
+	$(OS_GO_BIN_NAME) install github.com/oligot/go-mod-upgrade@v0.9.1
 
 mod-up:
 	$(OS_GO_BIN_NAME) mod tidy
 	go-mod-upgrade
-	go mod tidy
+	$(OS_GO_BIN_NAME) mod tidy
 mod-tidy:
 	$(OS_GO_BIN_NAME) mod tidy
 
@@ -113,7 +112,7 @@ bin-init:
 bin-clean:
 	rm -rf $(BIN_ROOT)
 bin-build: bin-init
-	cd cmd/demo && go build -o $(BIN_MAIN) .
+	cd cmd/demo && $(OS_GO_BIN_NAME) build -o $(BIN_MAIN) .
 
 data-init:
 	mkdir -p $(DATA_ROOT)
