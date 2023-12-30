@@ -48,8 +48,8 @@ print:
 	@echo "BIN_ROOT:         $(BIN_ROOT)"
 	@echo "DATA_ROOT:        $(DATA_ROOT)"
 	@echo ""
-	@echo ""
 	@echo "bin:"
+	@echo ""
 	@echo "BIN_MAIN:         $(BIN_MAIN)"
 	@echo "BIN_MAIN_NAME:    $(BIN_MAIN_NAME)"
 	@echo "BIN_MAIN_WHICH:   $(BIN_MAIN_WHICH)"
@@ -127,14 +127,14 @@ run-serve:
 	# password-known
 
 run-admin:
-	$(BIN_MAIN) admin
+	$(BIN_MAIN_NAME) admin
 	# admin
 	# gedw99@gmail.com
 	# password-known
 
 run-migrate:
-	$(BIN_MAIN) migrate
+	$(BIN_MAIN_NAME) migrate
 
 run-gen:
-	$(BIN_MAIN) pb-gen models
+	$(BIN_MAIN_NAME) pb-gen models
 
