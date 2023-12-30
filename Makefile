@@ -1,4 +1,5 @@
 # https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
+SHELL = /bin/bash
 
 OS_GO_BIN_NAME=go
 ifeq ($(shell uname),Windows)
@@ -99,11 +100,11 @@ env-print: # Prints the environment we are running in.
 ci-build: # CI thats runs build, test, run cycle using current versions.
 	@echo ""
 	@echo "CI BUILD starting ..."
-	$(MAKE) print
+	$(MAKE) env-print
 	$(MAKE) mod-tidy
 	$(MAKE) dep-tools
 	$(MAKE) print
-	$(MAKE) env-print
+	
 	$(MAKE) bin-clean
 	$(MAKE) data-clean
 	$(MAKE) gen
@@ -201,5 +202,20 @@ run-admin: # Create Admin user
 
 run-migrate: # Create DB migrations.
 	$(BIN_MAIN_CMD) migrate
+
+
+### RELEASE
+
+release-print: ## Print Release
+	@echo ""
+	git tag --list
+	@echo ""
+
+release: # DO a release. Example: make release V=0.0.0
+	@read -p "Press enter to confirm and push to origin ..."
+	git tag v$(V)
+	git push origin v$(V)
+
+
 
 
