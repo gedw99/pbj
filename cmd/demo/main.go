@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	pbj "github.com/ccutch/pb-j-stack"
+	pbj "github.com/ccutch/pbj"
 )
 
 func main() {
