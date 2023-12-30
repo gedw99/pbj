@@ -69,6 +69,7 @@ ci-build: # build for ci, that can be called from Windows, MacOS or Linux
 	@echo ""
 	@echo "CI BUILD starting ..."
 	$(MAKE) help
+	$(MAKE) mod-tidy
 	$(MAKE) dep-tools
 	$(MAKE) print
 	$(MAKE) bin-clean
@@ -77,7 +78,10 @@ ci-build: # build for ci, that can be called from Windows, MacOS or Linux
 	@echo ""
 	@echo "CI BUILD ended ...."
 
-dep-tools:
+ci-test: ci-build # test for ci, that can be called from Windows, MacOS or Linux
+	$(MAKE) run-migrate
+
+dep-tools: # install tools
 	# gens golang models of PB. 
 	# https://github.com/alexisvisco/pocketpase-gen
 	go install github.com/alexisvisco/pocketpase-gen/cmd/pb-gen@latest
@@ -87,11 +91,11 @@ dep-tools:
 	go install github.com/oligot/go-mod-upgrade@v0.9.1
 
 mod-up:
-	go mod tidy
+	$(OS_GO_BIN_NAME) mod tidy
 	go-mod-upgrade
 	go mod tidy
 mod-tidy:
-	go mod tidy
+	$(OS_GO_BIN_NAME) mod tidy
 
 config-email:
 	# 1. Create a brand new regular gmail account.
