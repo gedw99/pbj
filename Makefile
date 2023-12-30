@@ -6,8 +6,7 @@ ifeq ($(shell uname),Windows)
 endif
 
 OS_GO_OS=$(shell $(OS_GO_BIN_NAME) env GOOS)
-# toggle to fake being windows..
-OS_GO_OS=windows
+#OS_GO_OS=windows # toggle to fake being windows..
 
 BIN_ROOT=$(PWD)/.bin
 export PATH:=$(PATH):$(BIN_ROOT)
@@ -19,6 +18,11 @@ ifeq ($(OS_GO_OS),windows)
 endif
 BIN_MAIN=$(BIN_ROOT)/$(BIN_MAIN_NAME)
 BIN_MAIN_WHICH=$(shell command -v $(BIN_MAIN_NAME))
+
+# todo: work out if debug or release env
+BIN_MAIN_CMD=$(BIN_MAIN_CMD_DEBUG)
+BIN_MAIN_CMD_DEBUG=$(BIN_MAIN_NAME) --dev --dir $(DATA_ROOT)/debug
+BIN_MAIN_CMD_RELEASE=$(BIN_MAIN_NAME) --dir $(DATA_ROOT)/release
 
 BIN_GEN_NAME=pb-gen
 ifeq ($(OS_GO_OS),windows)
@@ -37,7 +41,6 @@ BIN_GMU_WHICH=$(shell command -v $(BIN_GMU_NAME))
 help: # Show help for each of the Makefile recipes.
 	@grep -E '^[a-zA-Z0-9 -]+:.*#'  Makefile | sort | while read -r l; do printf "\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
 
-
 print:
 	@echo ""
 	@echo "OS_GO_BIN_NAME:   $(OS_GO_BIN_NAME)"
@@ -50,9 +53,13 @@ print:
 	@echo ""
 	@echo "bin:"
 	@echo ""
-	@echo "BIN_MAIN:         $(BIN_MAIN)"
-	@echo "BIN_MAIN_NAME:    $(BIN_MAIN_NAME)"
-	@echo "BIN_MAIN_WHICH:   $(BIN_MAIN_WHICH)"
+	@echo "BIN_MAIN:                 $(BIN_MAIN)"
+	@echo "BIN_MAIN_NAME:            $(BIN_MAIN_NAME)"
+	@echo "BIN_MAIN_WHICH:           $(BIN_MAIN_WHICH)"
+	@echo "BIN_MAIN_CMD:             $(BIN_MAIN_CMD)"
+	@echo "BIN_MAIN_CMD_DEBUG:       $(BIN_MAIN_CMD_DEBUG)"
+	@echo "BIN_MAIN_CMD_RELEASE:     $(BIN_MAIN_CMD_RELEASE)"
+
 	@echo ""
 	@echo "tools:"
 	@echo ""
@@ -66,18 +73,26 @@ print:
 ci-build: # build for ci, that can be called from Windows, MacOS or Linux locally and in Github workflows
 	@echo ""
 	@echo "CI BUILD starting ..."
-	$(MAKE) help
 	$(MAKE) print
-	$(MAKE) mod-tidy
 	$(MAKE) dep-tools
+	$(MAKE) mod-tidy
 	$(MAKE) print
 	$(MAKE) bin-clean
 	$(MAKE) data-clean
+	$(MAKE) gen
 	$(MAKE) bin-build
+	$(MAKE) run-migrate
 	@echo ""
 	@echo "CI BUILD ended ...."
 
-ci-test: ci-build # test for ci
+
+ci-smoke: # CI that runs latest of everything and tests it.
+	$(MAKE) print
+	$(MAKE) dep-tools
+	$(MAKE) mod-tidy
+	$(MAKE) mod-up-force
+	$(MAKE) print
+	$(MAKE) bin-build
 	$(MAKE) run-migrate
 
 dep-tools: # install tools
@@ -89,12 +104,26 @@ dep-tools: # install tools
 	# https://github.com/oligot/go-mod-upgrade/releases/tag/v0.9.1
 	$(OS_GO_BIN_NAME) install github.com/oligot/go-mod-upgrade@v0.9.1
 
-mod-up:
+### MODULES
+
+mod-up: # upgrade golang modules to latest. interactivly.
 	$(OS_GO_BIN_NAME) mod tidy
-	go-mod-upgrade
+	$(BIN_GMU_NAME)
 	$(OS_GO_BIN_NAME) mod tidy
-mod-tidy:
+mod-up-force: # upgrade golang modules to latest. forcing it.
 	$(OS_GO_BIN_NAME) mod tidy
+	$(BIN_GMU_NAME) -f
+	$(OS_GO_BIN_NAME) mod tidy
+mod-tidy: # tidy the golang modules to the versions in the go-mod
+	$(OS_GO_BIN_NAME) mod tidy
+
+### GEN
+
+gen: # generates golang models based on Pocketbase data
+	# use this as design time.
+	$(BIN_GEN_NAME) models
+
+### CONFIG
 
 config-email:
 	# 1. Create a brand new regular gmail account.
@@ -107,7 +136,7 @@ config-email:
 		# user: yourusername@gmail.com
 		# pass: the generated password from step 3 ( grsz fhqh lheg grao )
 
-bin-init:
+bin-init: 
 	mkdir -p $(BIN_ROOT)
 bin-clean:
 	rm -rf $(BIN_ROOT)
@@ -119,8 +148,8 @@ data-init:
 data-clean:
 	rm -rf $(DATA_ROOT)
 
-run-serve:
-	$(BIN_MAIN_NAME) serve
+run-serve: # server pb
+	$(BIN_MAIN_CMD) serve
 
 	# Admin: 	http://127.0.0.1:8090/_/
 	# Users: 	http://127.0.0.1:8090
@@ -129,15 +158,13 @@ run-serve:
 	# joeblew99@gmail.com
 	# password-known
 
-run-admin:
-	$(BIN_MAIN_NAME) admin
+run-admin: # creates pb admin user
+	$(BIN_MAIN_CMD) admin
 	# admin
 	# gedw99@gmail.com
 	# password-known
 
-run-migrate:
-	$(BIN_MAIN_NAME) migrate
+run-migrate: # creates pb db migrations based on tables created by PB GUI
+	$(BIN_MAIN_CMD) migrate -h
 
-run-gen:
-	$(BIN_MAIN_NAME) pb-gen models
 
