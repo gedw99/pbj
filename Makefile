@@ -87,9 +87,14 @@ env-print: # Prints the environment we are running in.
 	@echo "ENV_TRAVIS:       $(TRAVIS)"
 	@echo "ENV_CIRCLECI:     $(CIRCLECI)"
 	@echo "ENV_GITLAB_CI:    $(GITLAB_CI)"
+	@echo ""
 
+	@echo ""
+	@echo "IS CI ?"
 	$(BIN_CII_NAME) isci
-
+	@echo "IS PR ?"
+	$(BIN_CII_NAME) ispr
+	@echo ""
 
 ci-build: # CI thats runs build, test, run cycle using current versions.
 	@echo ""
@@ -133,26 +138,29 @@ dep-tools: # install tools
 
 ### MODULES
 
-mod-up: # upgrade golang modules to latest. interactivly.
+mod-up: # Upgrade golang modules to latest Interactivly.
 	$(OS_GO_BIN_NAME) mod tidy
 	$(BIN_GMU_NAME)
 	$(OS_GO_BIN_NAME) mod tidy
-mod-up-force: # upgrade golang modules to latest. forcing it.
+mod-up-force: # Upgrade golang modules to latest Forcefully.
 	$(OS_GO_BIN_NAME) mod tidy
 	$(BIN_GMU_NAME) -f
 	$(OS_GO_BIN_NAME) mod tidy
-mod-tidy: # tidy the golang modules to the versions in the go-mod
+mod-tidy: # Tidy the golang modules to versions in go.mod
 	$(OS_GO_BIN_NAME) mod tidy
 
 ### GEN
 
-gen: # generates golang models based on Pocketbase data
-	# use this as design time.
-	$(BIN_GEN_NAME) models
-
+gen-help:
+	$(BIN_GEN_NAME) -h
+gen: # Generate the golang code.
+	# 1. Gen the goalng model types off the Pocketbase DB.
+	$(BIN_GEN_NAME) --verbose --db-path $(DATA_ROOT)/debug/data.db models
+gen-clean: # Cleans generated code..
+	rm -rf modelspb
 ### CONFIG
 
-config-email: # configure email to use gmail.
+config-email: # Configure email to use gmail.
 	# 1. Create a brand new regular gmail account.
 	# 2. Enable 2fa (it seems required if you want to use App passwords)
 	# 3. Go to https://myaccount.google.com/apppasswords and select the "Other" option from the app dropdown:
@@ -167,7 +175,7 @@ bin-init:
 	mkdir -p $(BIN_ROOT)
 bin-clean:
 	rm -rf $(BIN_ROOT)
-bin-build: bin-init
+bin-build: bin-init # Build the binary.
 	cd cmd/demo && $(OS_GO_BIN_NAME) build -o $(BIN_MAIN) .
 
 data-init:
@@ -175,7 +183,7 @@ data-init:
 data-clean:
 	rm -rf $(DATA_ROOT)
 
-run-serve: # server pb
+run-serve: # Serve
 	$(BIN_MAIN_CMD) serve
 
 	# Admin: 	http://127.0.0.1:8090/_/
@@ -185,13 +193,13 @@ run-serve: # server pb
 	# joeblew99@gmail.com
 	# password-known
 
-run-admin: # creates pb admin user
+run-admin: # Create Admin user
 	$(BIN_MAIN_CMD) admin
 	# admin
 	# gedw99@gmail.com
 	# password-known
 
-run-migrate: # creates pb db migrations based on tables created by PB GUI
+run-migrate: # Create DB migrations.
 	$(BIN_MAIN_CMD) migrate
 
 
