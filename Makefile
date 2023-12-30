@@ -10,6 +10,7 @@ OS_GO_OS=$(shell $(OS_GO_BIN_NAME) env GOOS)
 #OS_GO_OS=windows
 
 BIN_ROOT=$(PWD)/.bin
+export PATH:=$(PATH):$(BIN_ROOT)
 DATA_ROOT=$(PWD)/.data
 
 BIN_MAIN_NAME=pbj
@@ -48,11 +49,12 @@ print:
 	@echo "DATA_ROOT:        $(DATA_ROOT)"
 	@echo ""
 	@echo ""
+	@echo "bin:"
 	@echo "BIN_MAIN:         $(BIN_MAIN)"
 	@echo "BIN_MAIN_NAME:    $(BIN_MAIN_NAME)"
 	@echo "BIN_MAIN_WHICH:   $(BIN_MAIN_WHICH)"
 	@echo ""
-	@echo "-tools"
+	@echo "tools:"
 	@echo ""
 	@echo "BIN_GEN_NAME:     $(BIN_GEN_NAME)"
 	@echo "BIN_GEN_WHICH:    $(BIN_GEN_WHICH)"
@@ -115,7 +117,7 @@ data-clean:
 	rm -rf $(DATA_ROOT)
 
 run-serve:
-	$(BIN_MAIN) serve
+	$(BIN_MAIN_NAME) serve
 
 	# Admin: 	http://127.0.0.1:8090/_/
 	# Users: 	http://127.0.0.1:8090
