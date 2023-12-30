@@ -19,10 +19,13 @@ endif
 BIN_MAIN=$(BIN_ROOT)/$(BIN_MAIN_NAME)
 BIN_MAIN_WHICH=$(shell command -v $(BIN_MAIN_NAME))
 
-# todo: work out if debug or release env
-BIN_MAIN_CMD=$(BIN_MAIN_CMD_DEBUG)
+# toggle for DEBUG or RELEASE based in CI env
+#BIN_MAIN_CMD=$(BIN_MAIN_CMD_DEBUG)
+BIN_MAIN_CMD=$(BIN_MAIN_CMD_RELEASE)
 BIN_MAIN_CMD_DEBUG=$(BIN_MAIN_NAME) --dev --dir $(DATA_ROOT)/debug
 BIN_MAIN_CMD_RELEASE=$(BIN_MAIN_NAME) --dir $(DATA_ROOT)/release
+
+### TOOLS
 
 BIN_GEN_NAME=pb-gen
 ifeq ($(OS_GO_OS),windows)
@@ -36,12 +39,17 @@ ifeq ($(OS_GO_OS),windows)
 endif
 BIN_GMU_WHICH=$(shell command -v $(BIN_GMU_NAME))
 
+BIN_CII_NAME=ci-info
+ifeq ($(OS_GO_OS),windows)
+	BIN_CII_NAME=ci-info.exe
+endif
+BIN_CII_WHICH=$(shell command -v $(BIN_CII_NAME))
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
 	@grep -E '^[a-zA-Z0-9 -]+:.*#'  Makefile | sort | while read -r l; do printf "\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
 
-print:
+print: # Prints all pertientn info we need.
 	@echo ""
 	@echo "OS_GO_BIN_NAME:   $(OS_GO_BIN_NAME)"
 	@echo ""
@@ -69,14 +77,28 @@ print:
 	@echo "BIN_GMU_NAME:     $(BIN_GMU_NAME)"
 	@echo "BIN_GMU_WHICH:    $(BIN_GMU_WHICH)"
 	@echo ""
+	@echo "BIN_CII_NAME:     $(BIN_CII_NAME)"
+	@echo "BIN_CII_WHICH:    $(BIN_CII_WHICH)"
+	@echo ""
 
-ci-build: # build for ci, that can be called from Windows, MacOS or Linux locally and in Github workflows
+env-print: # Prints the environment we are running in.
+	@echo ""
+	@echo "ENV_GITHUB:       $(GITHUB_ACTIONS)"
+	@echo "ENV_TRAVIS:       $(TRAVIS)"
+	@echo "ENV_CIRCLECI:     $(CIRCLECI)"
+	@echo "ENV_GITLAB_CI:    $(GITLAB_CI)"
+
+	$(BIN_CII_NAME) isci
+
+
+ci-build: # CI thats runs build, test, run cycle using current versions.
 	@echo ""
 	@echo "CI BUILD starting ..."
 	$(MAKE) print
-	$(MAKE) dep-tools
 	$(MAKE) mod-tidy
+	$(MAKE) dep-tools
 	$(MAKE) print
+	$(MAKE) env-print
 	$(MAKE) bin-clean
 	$(MAKE) data-clean
 	$(MAKE) gen
@@ -86,12 +108,13 @@ ci-build: # build for ci, that can be called from Windows, MacOS or Linux locall
 	@echo "CI BUILD ended ...."
 
 
-ci-smoke: # CI that runs latest of everything and tests it.
+ci-smoke: # CI that runs build, test, run cycle using the latest versions.
 	$(MAKE) print
 	$(MAKE) dep-tools
 	$(MAKE) mod-tidy
 	$(MAKE) mod-up-force
 	$(MAKE) print
+	$(MAKE) env-print
 	$(MAKE) bin-build
 	$(MAKE) run-migrate
 
@@ -103,6 +126,10 @@ dep-tools: # install tools
 	# https://github.com/oligot/go-mod-upgrade
 	# https://github.com/oligot/go-mod-upgrade/releases/tag/v0.9.1
 	$(OS_GO_BIN_NAME) install github.com/oligot/go-mod-upgrade@v0.9.1
+
+	# https://github.com/KlotzAndrew/ci-info
+	# https://github.com/KlotzAndrew/ci-info/releases/tag/v0.2.0
+	$(OS_GO_BIN_NAME) install github.com/klotzandrew/ci-info@v0.2.0
 
 ### MODULES
 
@@ -125,7 +152,7 @@ gen: # generates golang models based on Pocketbase data
 
 ### CONFIG
 
-config-email:
+config-email: # configure email to use gmail.
 	# 1. Create a brand new regular gmail account.
 	# 2. Enable 2fa (it seems required if you want to use App passwords)
 	# 3. Go to https://myaccount.google.com/apppasswords and select the "Other" option from the app dropdown:
@@ -165,6 +192,6 @@ run-admin: # creates pb admin user
 	# password-known
 
 run-migrate: # creates pb db migrations based on tables created by PB GUI
-	$(BIN_MAIN_CMD) migrate -h
+	$(BIN_MAIN_CMD) migrate
 
 
